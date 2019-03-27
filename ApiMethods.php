@@ -41,8 +41,7 @@ class ApiMethods
      * @param $password Son mot de passe
      * @return array result (la réponse API au format tableau, contient l'id du membre si ses ids sont exacts)
      */
-    public function login($username, $password)
-    {
+    public function login($username, $password) {
         $query = $this->pdo->prepare('SELECT id, mdp FROM membre WHERE login = :login');
 
         $query->bindParam(':login', $username, PDO::PARAM_STR);
@@ -145,19 +144,53 @@ class ApiMethods
         );
 
         foreach ($fraisForfait as $key => $value) {
-            $query3 = $this->pdo->prepare('INSERT INTO lignefraisforfait
-                                                                 SET idmembre = :memberId,
-                                                                 mois = :mois,
-                                                                 idfraisforfait = :idFraisForfait,
-                                                                 quantite = :quantite
-                   ');
-            $query3->bindValue(':memberId', $memberId, PDO::PARAM_STR);
-            $query3->bindValue(':mois', $expenseLine['moisAnnee']);
-            $query3->bindValue(':idFraisForfait', $key);
-            $query3->bindValue(':quantite', $value);
+            /**
+             * Vérification si les frais forfait existent déjà ou non
+             */
+            $query = $this->pdo->prepare('SELECT COUNT(idmembre) FROM lignefraisforfait 
+                                                    WHERE idmembre = :memberId
+                                                    AND mois = :mois
+                                                    AND idfraisforfait = :idFraisForfait
+            ');
+            $query->bindValue(':memberId', $memberId);
+            $query->bindParam(":mois", $expenseLine['moisAnnee'], PDO::PARAM_INT);
+            $query->bindParam(":idFraisForfait", $key, PDO::PARAM_STR);
+            $query->execute();
 
-            $query3->execute();
-            $query3->closeCursor();
+            $lineExists = $query->fetchColumn();
+
+            /**
+             * Si l'enregistrement n'existe pas on l'insère, sinon on le met à jour
+             */
+            if(!$lineExists) {
+                $query2 = $this->pdo->prepare('INSERT INTO lignefraisforfait
+                                                         SET idmembre = :memberId,
+                                                         mois = :mois,
+                                                         idfraisforfait = :idFraisForfait,
+                                                         quantite = :quantite
+                       ');
+                $query2->bindValue(':memberId', $memberId, PDO::PARAM_STR);
+                $query2->bindValue(':mois', $expenseLine['moisAnnee']);
+                $query2->bindValue(':idFraisForfait', $key);
+                $query2->bindValue(':quantite', $value);
+
+                $query2->execute();
+                $query2->closeCursor();
+            } else {
+                $query2 = $this->pdo->prepare('UPDATE lignefraisforfait
+                                                         SET quantite = :quantite
+                                                         WHERE idmembre = :memberId
+                                                         AND mois = :mois 
+                                                         AND idfraisforfait = :idFraisForfait
+                       ');
+                $query2->bindValue(':quantite', $value);
+                $query2->bindValue(':memberId', $memberId, PDO::PARAM_STR);
+                $query2->bindValue(':mois', $expenseLine['moisAnnee']);
+                $query2->bindValue(':idFraisForfait', $key);
+
+                $query2->execute();
+                $query2->closeCursor();
+            }
         }
     }
 
@@ -179,6 +212,11 @@ class ApiMethods
                 $leFraisHf['date'] = $expenseLine['annee'] . '-' . sprintf("%02d", $expenseLine['mois']) . '-' . $leFraisHf['jour'];
             }
 
+            /**
+             * Recherche du frais HF par date de déclaration & libellé
+             * Un visiteur médical ne pourra ainsi pas déclarer 2x le même frais
+             * Pour le même jour quel que soit le mois en cours (évite la fraude)
+             */
             $query = $this->pdo->prepare('SELECT COUNT(id) FROM lignefraishorsforfait 
                                                         WHERE idmembre = :memberId
                                                         AND date = :date
