@@ -14,10 +14,11 @@ class ApiMethods
      * Constantes contenant les messages API
      * Utile pour débogguer l'Api et comprendre précisément ce qui ne va pas en cas de problème
      */
-    const UNDEFINED_ERROR = 'Erreur non définie';
+    const UNDEFINED_ERROR     = 'Erreur non définie';
     const INVALID_CREDENTIALS = 'Identifiant ou mot de passe incorrect';
-    const VALID_CREDENTIALS = 'Connexion réussie';
-    const SYNCHRONIZE_OK = 'Synchronisation réussie';
+    const BAD_INFORMATIONS    = 'Informations de synchronisation manquantes ou mal formatées';
+    const VALID_CREDENTIALS   = 'Connexion réussie';
+    const SYNCHRONIZE_OK      = 'Synchronisation réussie';
 
     /**
      * Constantes permettant de déterminer si on créé ou non une FDF
@@ -27,6 +28,7 @@ class ApiMethods
     private $createRecordHf;
     private $pdo;
     private $result = ['result' => false];
+    private $idEtat = null;
 
     public function __construct()
     {
@@ -49,14 +51,14 @@ class ApiMethods
         $data = $query->fetch();
 
         if (isset($data['mdp']) && password_verify($password, $data['mdp'])) {
-            $result['result'] = true;
-            $result['message'] = self::VALID_CREDENTIALS;
-            $result['idmembre'] = $data['id'];
+            $this->result['result'] = true;
+            $this->result['message'] = self::VALID_CREDENTIALS;
+            $this->result['idmembre'] = $data['id'];
         } else {
-            $result = self::INVALID_CREDENTIALS;
+            $this->result['message'] = self::INVALID_CREDENTIALS;
         }
 
-        return $result;
+        return $this->result;
     }
 
     /**
@@ -71,25 +73,43 @@ class ApiMethods
 
         // {"201904":{"annee":2019,"etape":0,"km":50,"lesFraisHf":[],"mois":4,"nuitee":0,"repas":0},"201903":{"annee":2019,"etape":0,"km":20,"lesFraisHf":[{"jour":21,"montant":120.0,"motif":""}],"mois":3,"nuitee":30,"repas":0}}
 
-        foreach ($expenses as $expenseLine) {
-            /*
-             * Création du mois sous la forme YYYYMM
-             * Ajout au tableau $expenseLine pour être utilisé aisément dans les fonctions appellées
-             */
-            $expenseLine['moisAnnee'] = $expenseLine['annee'] . sprintf("%02d", $expenseLine['mois']);
+        if($expenses) {
+            foreach ($expenses as $expenseLine) {
+                /*
+                 * Création du mois sous la forme YYYYMM
+                 * Ajout au tableau $expenseLine pour être utilisé aisément dans les fonctions appellées
+                 */
+                $expenseLine['moisAnnee'] = $expenseLine['annee'] . sprintf("%02d", $expenseLine['mois']);
 
-            // Création de la FDF si elle n'existe pas
-            $this->createNewFicheFrais($memberId, $expenseLine);
+                // Création de la FDF si elle n'existe pas
+                $this->createNewFicheFrais($memberId, $expenseLine);
 
-            // Insertion des frais forfait
-            $this->createOrUpdateFraisForfait($memberId, $expenseLine);
+                /**
+                 * Si la fiche existe déjà
+                 * Que son id d'état est différent de CR pour création
+                 * On ne doit pas la modifier, donc on passe à l'itération suivante
+                 */
+                if($this->idEtat && $this->idEtat != 'CR') {
+                    $this->idEtat = null;
+                    continue;
+                }
 
-            // Insertion des frais HF
-            $this->createOrUpdateFraisHf($memberId, $expenseLine);
+                // Insertion des frais forfait
+                $this->createOrUpdateFraisForfait($memberId, $expenseLine);
+
+                // Insertion des frais HF
+                $this->createOrUpdateFraisHf($memberId, $expenseLine);
+
+                // Réinitialisation de la variable
+                $this->idEtat = null;
+            }
+
+            $result['result'] = 'true';
+            $result['message'] = self::SYNCHRONIZE_OK;
+        } else {
+            $result['result'] = 'false';
+            $result['message'] = self::BAD_INFORMATIONS;
         }
-
-        $result['message'] = self::SYNCHRONIZE_OK;
-
         return $result;
     }
 
@@ -99,7 +119,7 @@ class ApiMethods
         /**
          * Vérification si la fiche de frais existe déjà ou non
          */
-        $query = $this->pdo->prepare('SELECT COUNT(idmembre) FROM fichefrais 
+        $query = $this->pdo->prepare('SELECT COUNT(idmembre) AS ficheExiste, idetat FROM fichefrais 
                                                 WHERE idmembre = :memberId
                                                 AND mois = :mois
         ');
@@ -107,7 +127,10 @@ class ApiMethods
         $query->bindParam(":mois", $expenseLine['moisAnnee'], PDO::PARAM_INT);
         $query->execute();
 
-        $this->createRecord = $query->fetchColumn();
+        $data = $query->fetchAll()[0];
+
+        $this->idEtat = $data['idetat'];
+        $this->createRecord = $data['ficheExiste'];
 
         /**
          * Si la fiche de frais n'existe pas on la créé dans la table fichefrais
@@ -253,6 +276,7 @@ class ApiMethods
                                                          libelle = :libelle,
                                                          date = :date,
                                                          montant = :montant
+                                                         WHERE idetat = `CR`
                 ');
 
                 $query2->bindValue(':libelle', $leFraisHf['motif'], PDO::PARAM_STR);

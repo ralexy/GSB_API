@@ -11,16 +11,16 @@ require_once 'ApiMethods.php';
 $apiMethods = new ApiMethods();
 $jsonResult = $apiMethods->getUndefinedError();
 
-if(isset($_GET['action'])) {
-    switch($_GET['action']) {
+if(isset($_REQUEST['action'])) {
+    switch($_REQUEST['action']) {
         case 'login':
-            if(isset($_GET['username']) && isset($_GET['password'])) {
-                $jsonResult = $apiMethods->login($_GET['username'], $_GET['password']);
+            if(isset($_REQUEST['username']) && isset($_REQUEST['password'])) {
+                $jsonResult = $apiMethods->login($_REQUEST['username'], $_REQUEST['password']);
             }
 
         case 'synchronize':
-            if(isset($_GET['memberId']) && isset($_GET['expenses'])) {
-                $jsonResult = $apiMethods->synchronize($_GET['memberId'], $_GET['expenses']);
+            if(isset($_REQUEST['memberId']) && isset($_REQUEST['expenses'])) {
+                $jsonResult = $apiMethods->synchronize($_REQUEST['memberId'], $_REQUEST['expenses']);
             }
     }
 }
