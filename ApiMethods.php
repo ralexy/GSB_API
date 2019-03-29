@@ -14,11 +14,11 @@ class ApiMethods
      * Constantes contenant les messages API
      * Utile pour débogguer l'Api et comprendre précisément ce qui ne va pas en cas de problème
      */
-    const UNDEFINED_ERROR     = 'Erreur non définie';
+    const UNDEFINED_ERROR = 'Erreur non définie';
     const INVALID_CREDENTIALS = 'Identifiant ou mot de passe incorrect';
-    const BAD_INFORMATIONS    = 'Informations de synchronisation manquantes ou mal formatées';
-    const VALID_CREDENTIALS   = 'Connexion réussie';
-    const SYNCHRONIZE_OK      = 'Synchronisation réussie';
+    const BAD_INFORMATIONS = 'Informations de synchronisation manquantes ou mal formatées';
+    const VALID_CREDENTIALS = 'Connexion réussie';
+    const SYNCHRONIZE_OK = 'Synchronisation réussie';
 
     /**
      * Constantes permettant de déterminer si on créé ou non une FDF
@@ -43,7 +43,8 @@ class ApiMethods
      * @param $password Son mot de passe
      * @return array result (la réponse API au format tableau, contient l'id du membre si ses ids sont exacts)
      */
-    public function login($username, $password) {
+    public function login($username, $password)
+    {
         $query = $this->pdo->prepare('SELECT id, mdp FROM membre WHERE login = :login');
 
         $query->bindParam(':login', $username, PDO::PARAM_STR);
@@ -73,7 +74,7 @@ class ApiMethods
 
         // {"201904":{"annee":2019,"etape":0,"km":50,"lesFraisHf":[],"mois":4,"nuitee":0,"repas":0},"201903":{"annee":2019,"etape":0,"km":20,"lesFraisHf":[{"jour":21,"montant":120.0,"motif":""}],"mois":3,"nuitee":30,"repas":0}}
 
-        if($expenses) {
+        if ($expenses) {
             foreach ($expenses as $expenseLine) {
                 /*
                  * Création du mois sous la forme YYYYMM
@@ -89,7 +90,7 @@ class ApiMethods
                  * Que son id d'état est différent de CR pour création
                  * On ne doit pas la modifier, donc on passe à l'itération suivante
                  */
-                if($this->idEtat && $this->idEtat != 'CR') {
+                if ($this->idEtat && $this->idEtat != 'CR') {
                     $this->idEtat = null;
                     continue;
                 }
@@ -185,13 +186,13 @@ class ApiMethods
             /**
              * Si l'enregistrement n'existe pas on l'insère, sinon on le met à jour
              */
-            if(!$lineExists) {
+            if (!$lineExists) {
                 $query2 = $this->pdo->prepare('INSERT INTO lignefraisforfait
                                                          SET idmembre = :memberId,
                                                          mois = :mois,
                                                          idfraisforfait = :idFraisForfait,
                                                          quantite = :quantite
-                       ');
+                ');
                 $query2->bindValue(':memberId', $memberId, PDO::PARAM_STR);
                 $query2->bindValue(':mois', $expenseLine['moisAnnee']);
                 $query2->bindValue(':idFraisForfait', $key);
@@ -205,7 +206,7 @@ class ApiMethods
                                                          WHERE idmembre = :memberId
                                                          AND mois = :mois 
                                                          AND idfraisforfait = :idFraisForfait
-                       ');
+                ');
                 $query2->bindValue(':quantite', $value);
                 $query2->bindValue(':memberId', $memberId, PDO::PARAM_STR);
                 $query2->bindValue(':mois', $expenseLine['moisAnnee']);
@@ -231,7 +232,7 @@ class ApiMethods
             /*
              * Ajout de la date au tableau sous le format AAAA-MM-JJ
              */
-            if(empty($leFraisHf['date'])) {
+            if (empty($leFraisHf['date'])) {
                 $leFraisHf['date'] = $expenseLine['annee'] . '-' . sprintf("%02d", $expenseLine['mois']) . '-' . $leFraisHf['jour'];
             }
 
@@ -260,7 +261,7 @@ class ApiMethods
                                                          libelle = :libelle,
                                                          date = :date,
                                                          montant = :montant
-                       ');
+                ');
 
                 $query2->bindValue(':memberId', $memberId, PDO::PARAM_STR);
                 $query2->bindValue(':mois', $expenseLine['moisAnnee'], PDO::PARAM_INT);

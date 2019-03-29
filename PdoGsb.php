@@ -6,7 +6,8 @@
  * Time: 10:59
  */
 
-class PdoGsb {
+class PdoGsb
+{
     private static $server = 'mysql:host=localhost';
     private static $db = 'dbname=gsb_frais';
     private static $user = 'root';
@@ -27,8 +28,8 @@ class PdoGsb {
                 self::$pwd
             );
             self::$myPdo->query('SET CHARACTER SET utf8');
-        } catch(Exception $e) {
-            die('Erreur : '. $e->getMessage());
+        } catch (Exception $e) {
+            die('Erreur : ' . $e->getMessage());
         }
     }
 
