@@ -9,6 +9,7 @@ Ces instructions vous permettront de récupérer ce projet et de le lancer sur u
 ### Prérequis
 
 L'application web GSB doit préalablement être installée et opérationnelle, plus d'informations ici : https://github.com/ralexy/GSB_PHP/blob/master/README.md
+Il faudra se placer dans le dossier **/www** de PPE_GSB.
 
 Vous devez posséder un serveur web et y installer
 
@@ -18,20 +19,19 @@ PHP 7 & MySQL
 
 ### Installation
 
-Il faut éditer la configuration SQL du fichier, en précisant vos identifiants **/PdoGsb.php**
-
-La configuration locale la plus commune pour PdoGsb.php est :
+La configuration SQL du fichier **PdoGsb.php** doit être éditée, en précisant vos identifiants.
+La configuration locale la plus commune pour ce fichier est :
 
 ```
 'localhost' pour $serveur
 'root' pour $user
 '' OU 'root' pour $mdp
 ```
-L'application web sera consultable via le dossier **/www/**, il est vivement conseillé de mettre en place un VirtualHost ou bien un .htaccess pour empêcher de remonter l'arborescence du serveur (particulièrement si celui-ci est accessible via Internet).
+L'API sera consultable via le dossier **/www/api/**, il est vivement conseillé de mettre en place un VirtualHost ou bien un .htaccess pour empêcher de remonter l'arborescence du serveur (particulièrement si celui-ci est accessible via Internet).
 
 ## Tester l'application
 
-Vous pouvez tester l'application avec des comptes utilisateurs ou comptable, il vous suffira d'utiliser ces couples d'identifiants pour les visiteurs :
+Vous pouvez tester l'application avec des comptes utilisateurs, il vous suffira d'utiliser ces couples d'identifiants :
 ```
 Utilisateur : cbedos
 Mot de passe : gmhxd
@@ -39,6 +39,8 @@ Mot de passe : gmhxd
 Utilisateur : ltusseau
 Mot de passe : ktp3s
 ```
+
+### Fonctionnement de l'API
 
 Les deux requêtes méthodes utilisables sont login et synchronize, voici deux exemples de requêtes pouvant être passées à l'API :
 
