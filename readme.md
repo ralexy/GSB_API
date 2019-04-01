@@ -47,7 +47,7 @@ Les deux requêtes méthodes utilisables sont login et synchronize, voici deux e
 L'API consultable ici : https://gsb.alexy-rousseau.com/api/
 
 **Action pour se connecter :**
-- GET | POST ?action=login&username{username}&password={password}
+- GET | POST ?action=login&username={username}&password={password}
 
 **Action pour synchroniser ses données :** 
 - GET | POST ?action=synchronize&memberId={memberId}&expenses={"201809":{"annee":2018,"etape":0,"km":50,"lesFraisHf":[],"mois":9,"nuitee":10,"repas":0},"201803":{"annee":2018,"etape":0,"km":19,"lesFraisHf":[{"jour":21,"montant":1336.0,"motif":"Test 2"}],"mois":3,"nuitee":55,"repas":0}}
